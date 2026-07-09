@@ -11,7 +11,7 @@ app.use(express.json());
 app.use("/admin", adminAuth);
 
 app.use("/admin/getAllData", (req, res, next) => {
-  res.send("Le re lund ke tere users ka data");
+  res.send("Users data is given");
 });
 
 app.use("/admin/deleteUser", (req, res, next) => {
