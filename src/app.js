@@ -4,7 +4,10 @@ const PORT = 7777;
 const { adminAuth } = require("./middlewares/auth");
 const connectDB = require("./config/database");
 const User = require("./models/user");
-
+const {
+  validateSignupData,
+  validateUpdateData,
+} = require("./utils/validation");
 //Middlewares
 app.use(express.json());
 // app.use(express.json());
@@ -19,20 +22,22 @@ app.use("/admin/deleteUser", (req, res, next) => {
 });
 
 app.post("/signup", async (req, res, next) => {
-  const userData = req.body;
-
   // const userData = {
   //   firstName: "Ashutosh",
   //   lastName: "Kumar",
   //   age: 21,
   //   gender: "male",
   // };
-  const user = new User(userData);
   try {
+    validateSignupData(req);
+
+    const { firstName, lastName, email, password } = req.body;
+
+    const user = new User({ firstName, lastName, email, password }); //Creating a new user instance according to the "User" model.
     await user.save();
     res.send("User is added to the DB");
   } catch (err) {
-    res.status(400).send("User is not added to the DB:" + err.message);
+    res.status(400).send("Signup failed: " + err.message);
   }
 });
 
@@ -67,19 +72,20 @@ app.get("/feed", async (req, res) => {
 });
 
 //Update User
-app.patch("/user", async (req, res) => {
-  const { userId, ...data } = req.body;
+app.patch("/user/:userId", async (req, res) => {
+  const userId = req.params?.userId;
 
   try {
-    console.log(userId);
-    const user = await User.findByIdAndUpdate({ _id: userId }, data, {
-      returnDocument: "after",
+    validateUpdateData(req);
+
+    const user = await User.findByIdAndUpdate(userId, req.body, {
+      new: true,
       runValidators: true,
     });
     console.log(user);
     res.send("User upadated successfully!");
   } catch (err) {
-    res.status(400).send("Something went wrong");
+    res.status(400).send("Update failed: " + err.message);
   }
 });
 
