@@ -19,6 +19,14 @@ function validateSignupData(req) {
   }
 }
 
+const validateLoginData = (req) => {
+  const { email } = req.body;
+
+  if (!email || !validator.isEmail(email)) {
+    throw new Error("Enter a valid Email-Id");
+  }
+};
+
 function validateUpdateData(req) {
   const ALLOWED_UPDATES = [
     "username",
@@ -56,4 +64,4 @@ function validateUpdateData(req) {
   }
 }
 
-module.exports = { validateSignupData, validateUpdateData };
+module.exports = { validateSignupData, validateUpdateData, validateLoginData };

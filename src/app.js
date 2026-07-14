@@ -7,7 +7,9 @@ const User = require("./models/user");
 const {
   validateSignupData,
   validateUpdateData,
+  validateLoginData,
 } = require("./utils/validation");
+const bcrypt = require("bcrypt");
 //Middlewares
 app.use(express.json());
 // app.use(express.json());
@@ -29,11 +31,18 @@ app.post("/signup", async (req, res, next) => {
   //   gender: "male",
   // };
   try {
+    //Validation
     validateSignupData(req);
 
     const { firstName, lastName, email, password } = req.body;
-
-    const user = new User({ firstName, lastName, email, password }); //Creating a new user instance according to the "User" model.
+    //Password Encryption
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new User({
+      firstName,
+      lastName,
+      email,
+      password: hashedPassword,
+    }); //Creating a new user instance according to the "User" model.
     await user.save();
     res.send("User is added to the DB");
   } catch (err) {
@@ -41,6 +50,27 @@ app.post("/signup", async (req, res, next) => {
   }
 });
 
+//login
+app.post("/login", async (req, res) => {
+  try {
+    validateLoginData(req);
+    const { email, password } = req.body;
+    const user = await User.findOne({ email: email }).select("+password");
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+
+    if (isPasswordCorrect) {
+      res.send("Login successful");
+    } else {
+      throw new Error("User not found");
+    }
+  } catch (err) {
+    res.status(400).send("Error: " + err.message);
+  }
+});
 //GET user by email
 app.get("/user", async (req, res) => {
   const userEmail = req.body.email;
