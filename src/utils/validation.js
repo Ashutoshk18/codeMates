@@ -28,10 +28,12 @@ const validateLoginData = (req) => {
 };
 
 function validateUpdateData(req) {
+  const requestedUpdates = Object.keys(req.body);
   const ALLOWED_UPDATES = [
     "username",
     "firstName",
     "lastName",
+    "gender",
     "bio",
     "techStack",
     "experienceLevel",
@@ -40,16 +42,16 @@ function validateUpdateData(req) {
     "portfolioUrl",
     "avatarUrl",
   ];
-  const isEveryFieldAllowed = Object.keys(req).every((k) =>
-    ALLOWED_UPDATES.includes(k),
-  );
+  const isEveryFieldAllowed = requestedUpdates.every((field) => {
+    return ALLOWED_UPDATES.includes(field);
+  });
   if (!isEveryFieldAllowed) {
     throw new Error(
       "Invalid update: contains a field you're not allowed to change",
     );
   }
 
-  const { githubUrl, portfolioUrl, bio } = req.body;
+  const { githubUrl, portfolioUrl, bio } = requestedUpdates;
   if (githubUrl && !validator.isURL(githubUrl, { protocols: ["https"] })) {
     throw new Error("githubUrl must be a valid HTTPS URL");
   }
@@ -64,4 +66,8 @@ function validateUpdateData(req) {
   }
 }
 
-module.exports = { validateSignupData, validateUpdateData, validateLoginData };
+module.exports = {
+  validateSignupData,
+  validateUpdateData,
+  validateLoginData,
+};

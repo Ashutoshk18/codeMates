@@ -1,6 +1,9 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 const { Schema } = mongoose;
+require("dotenv").config();
 
 const userSchema = new Schema(
   {
@@ -105,9 +108,46 @@ const userSchema = new Schema(
       type: String,
       enum: ["beginner", "intermediate", "advanced", "professional"],
     },
+    refreshToken: {
+      type: String,
+      select: false,
+    },
   },
   { timestamps: true },
 );
+
+// userSchema.methods.getJWT = async function () {
+//   const user = this;
+//   const token = await jwt.sign({ _id: user._id }, "ashutosh@secretKey", {
+//     expiresIn: "15m",
+//   });
+//   return token;
+// };
+
+userSchema.methods.getAccessToken = async function () {
+  return await jwt.sign({ _id: this._id }, process.env.JWT_ACCESS_SECRET, {
+    expiresIn: "15m",
+  });
+};
+
+userSchema.methods.getRefreshToken = async function () {
+  return await jwt.sign({ _id: this._id }, process.env.JWT_REFRESH_SECRET, {
+    expiresIn: "7d",
+  });
+};
+
+userSchema.pre("save", async function (next) {
+  try {
+    const user = this;
+    if (!user.isModified("password")) return;
+    user.password = await bcrypt.hash(user.password, 10);
+  } catch (err) {
+    throw err;
+  }
+});
+userSchema.post("save", function (doc) {
+  console.log(`User ${doc.email} was saved`);
+});
 
 const User = mongoose.model("User", userSchema);
 module.exports = User;
